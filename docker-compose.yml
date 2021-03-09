@@ -4,6 +4,14 @@ services:
       container_name: ${APP}_server
       image: ${IMAGE_SERVER}
       restart: unless-stopped
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.pritunl.entrypoints=https"
+        - "traefik.http.routers.pritunl.rule=Host(`glpi.ftechlab.ru`)"
+        - "traefik.http.routers.pritunl.tls=true"
+        - "traefik.http.routers.pritunl.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.pritunl-service.loadbalancer.server.port=5780"
+        - "traefik.docker.network=glpi-frontend"
       environment:
         GLPI_LANG: pt_BR
         db_HOST: mariadb-glpi
@@ -15,8 +23,8 @@ services:
         PLUGINS: "all"
       depends_on:
         - mariadb-glpi
-      ports:
-        - ${SERVER_PORT}:5780
+      expose:
+        - 5780
       volumes:
         - glpi-volume-files:/var/www/html/files
         - glpi-volume-plugins:/var/www/html/plugins
@@ -24,19 +32,37 @@ services:
         - glpi-frontend
         - glpi-backend
 
-    nginx:
-        image: ${IMAGE_NGINX}
-        container_name: ${APP}_nginx
-        restart: unless-stopped
+    traefik:
+        image: ${IMAGE_TRAEFIK}
+        container_name: ${APP}_traefik
+        security_opt:
+          - no-new-privileges:true
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.traefik.entrypoints=https"
+          - "traefik.http.routers.traefik.rule=Host(`traefik.ftechlab.ru`)"
+          - "traefik.http.routers.traefik.tls=true"
+          - "traefik.http.routers.traefik.tls.certresolver=letsEncrypt"
+          - "traefik.http.routers.traefik.service=api@internal"
+          - "traefik.http.routers.traefik.middlewares=traefik-auth"
+          - "traefik.http.services.traefik-traefik.loadbalancer.server.port=888"
+          - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$A1rHw/yS$$tPBoVHzso7Bj2RF6O/CDr."
+          - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+          # global redirect to https
+          - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+          - "traefik.http.routers.http-catchall.entrypoints=http"
+          - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
         ports:
-          - "8080:80"
+          - 80:80
+          - 443:443
         environment:
-        NGINX_PORT: ${NGINX_PORT}
-        NGINX_HOST: ${NGINX_HOST}
         volumes:
-          - $PWD/nginx.conf/:etc/nginx/conf.d/default.conf
+          - /etc/localtime:/etc/localtime:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ./data/traefik.yml:/traefik.yml:ro
+          - ./data/acme.json:/acme.json
         networks:
-          - glpi-backend
+          - glpi-frontend
     crond:
         image: ${IMAGE_CRON}
         container_name: ${APP}_cron
