@@ -6,11 +6,11 @@ services:
       restart: unless-stopped
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.pritunl.entrypoints=https"
-        - "traefik.http.routers.pritunl.rule=Host(`glpi.ftechlab.ru`)"
-        - "traefik.http.routers.pritunl.tls=true"
-        - "traefik.http.routers.pritunl.tls.certresolver=letsEncrypt"
-        - "traefik.http.services.pritunl-service.loadbalancer.server.port=5780"
+        - "traefik.http.routers.glpi.entrypoints=https"
+        - "traefik.http.routers.glpi.rule=Host(`glpi.ftechlab.ru`)"
+        - "traefik.http.routers.glpi.tls=true"
+        - "traefik.http.routers.glpi.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.glpi-service.loadbalancer.server.port=80"
         - "traefik.docker.network=glpi-frontend"
       environment:
         GLPI_LANG: pt_BR
@@ -24,7 +24,7 @@ services:
       depends_on:
         - mariadb-glpi
       expose:
-        - 5780
+        - 80
       volumes:
         - glpi-volume-files:/var/www/html/files
         - glpi-volume-plugins:/var/www/html/plugins
