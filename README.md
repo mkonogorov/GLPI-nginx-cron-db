@@ -1,1 +1,1 @@
-# GLPI-nginx-cron-db
+Пример файла env в env.example
