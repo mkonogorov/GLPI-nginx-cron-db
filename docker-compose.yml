@@ -28,6 +28,7 @@ services:
       volumes:
         - glpi-volume-files:/var/www/html/files
         - glpi-volume-plugins:/var/www/html/plugins
+        - ./var/www/html/files/_cache:/var/www/html/files/_cache
       networks:
         - glpi-frontend
         - glpi-backend
