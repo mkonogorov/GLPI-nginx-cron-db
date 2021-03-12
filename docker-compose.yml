@@ -1,38 +1,5 @@
 version: '3.7'
 services:
-    server:
-      container_name: ${APP}_server
-      image: ${IMAGE_SERVER}
-      restart: unless-stopped
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.glpi.entrypoints=https"
-        - "traefik.http.routers.glpi.rule=Host(`glpi.ftechlab.ru`)"
-        - "traefik.http.routers.glpi.tls=true"
-        - "traefik.http.routers.glpi.tls.certresolver=letsEncrypt"
-        - "traefik.http.services.glpi-service.loadbalancer.server.port=80"
-        - "traefik.docker.network=glpi-frontend"
-      environment:
-        GLPI_LANG: pt_BR
-        db_HOST: mariadb-glpi
-        db_PORT: 3306
-        db_DATABASE: ${MYSQL_DATABASE}
-        db_USER: ${MYSQL_USER}
-        db_PASSWORD: ${MYSQL_PASSWORD}
-        VERSION: "9.5.1"
-        PLUGINS: "all"
-      depends_on:
-        - mariadb-glpi
-      expose:
-        - 80
-      volumes:
-        - glpi-volume-files:/var/www/html/files
-        - glpi-volume-plugins:/var/www/html/plugins
-        - ./var/www/html/files/_cache:/var/www/html/files/_cache
-      networks:
-        - glpi-frontend
-        - glpi-backend
-
     traefik:
       image: ${IMAGE_TRAEFIK}
       container_name: ${APP}_traefik
@@ -41,7 +8,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.traefik.entrypoints=https"
-        - "traefik.http.routers.traefik.rule=Host(`traefik.ftechlab.ru`)"
+        - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)"
         - "traefik.http.routers.traefik.tls=true"
         - "traefik.http.routers.traefik.tls.certresolver=letsEncrypt"
         - "traefik.http.routers.traefik.service=api@internal"
@@ -63,6 +30,41 @@ services:
         - ./data/acme.json:/acme.json
       networks:
         - glpi-frontend
+
+    server:
+      container_name: ${APP}_server
+      image: ${IMAGE_SERVER}
+      restart: unless-stopped
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.glpi.entrypoints=https"
+        - "traefik.http.routers.glpi.rule=Host(`${DOMAIN}`)"
+        - "traefik.http.routers.glpi.tls=true"
+        - "traefik.http.routers.glpi.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.glpi-service.loadbalancer.server.port=80"
+        - "traefik.docker.network=glpi-frontend"
+      environment:
+        GLPI_LANG: pt_BR
+        db_HOST: mariadb-glpi
+        db_PORT: 3306
+        db_DATABASE: ${MYSQL_DATABASE}
+        db_USER: ${MYSQL_USER}
+        db_PASSWORD: ${MYSQL_PASSWORD}
+        VERSION: "9.5.1"
+        PLUGINS: "all"
+      depends_on:
+        - mariadb-glpi
+      expose:
+        - 80
+      # ports:
+      #   - 8090:80
+      volumes:
+        - glpi-volume-files:/var/www/html/files
+        - glpi-volume-plugins:/var/www/html/plugins
+      networks:
+        - glpi-frontend
+        - glpi-backend
+
     crond:
         image: ${IMAGE_CRON}
         container_name: ${APP}_cron
