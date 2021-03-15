@@ -3,12 +3,13 @@ services:
     traefik:
       image: ${IMAGE_TRAEFIK}
       container_name: ${APP}_traefik
+      restart: always
       security_opt:
         - no-new-privileges:true
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.traefik.entrypoints=https"
-        - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)"
+        - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN}`)"
         - "traefik.http.routers.traefik.tls=true"
         - "traefik.http.routers.traefik.tls.certresolver=letsEncrypt"
         - "traefik.http.routers.traefik.service=api@internal"
@@ -34,11 +35,11 @@ services:
     server:
       container_name: ${APP}_server
       image: ${IMAGE_SERVER}
-      restart: unless-stopped
+      restart: always
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.glpi.entrypoints=https"
-        - "traefik.http.routers.glpi.rule=Host(`${DOMAIN}`)"
+        - "traefik.http.routers.glpi.rule=Host(`${GLPI_DOMAIN}`)"
         - "traefik.http.routers.glpi.tls=true"
         - "traefik.http.routers.glpi.tls.certresolver=letsEncrypt"
         - "traefik.http.services.glpi-service.loadbalancer.server.port=80"
@@ -68,7 +69,7 @@ services:
     crond:
         image: ${IMAGE_CRON}
         container_name: ${APP}_cron
-        restart: unless-stopped
+        restart: always
         depends_on:
           - mariadb-glpi
         environment:
@@ -86,7 +87,7 @@ services:
     mariadb-glpi:
       container_name: ${APP}_db
       image: ${IMAGE_DB}
-      restart: unless-stopped
+      restart: always
       environment:
         MYSQL_DATABASE: ${MYSQL_DATABASE}
         MYSQL_USER: ${MYSQL_USER}
